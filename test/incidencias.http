@@ -1,0 +1,64 @@
+
+@svc = http://localhost:4004/odata/v4/incidencias
+### 1. Listar (con la criticidad calculada)
+GET {{svc}}/Incidencias?$select=numero,titulo,estado_code,prioridad_code,criticidad&$orderby=numero
+
+### 2. Crear correcta → 201, número 6, estado N, fecha de hoy
+POST {{svc}}/Incidencias
+Content-Type: application/json
+
+{ "titulo": "Teclado sin respuesta", "prioridad_code": "3", "categoria_code": "HARDWARE" }
+
+### 3. Título demasiado corto → 400
+POST {{svc}}/Incidencias
+Content-Type: application/json
+
+{ "titulo": "PC", "prioridad_code": "1", "categoria_code": "HARDWARE" }
+
+### 4. Prioridad inválida → 400
+POST {{svc}}/Incidencias
+Content-Type: application/json
+
+{ "titulo": "Ratón inalámbrico sin pilas", "prioridad_code": "7", "categoria_code": "HARDWARE" }
+
+### 5. Sin título → 400 (lo rechaza @mandatory)
+POST {{svc}}/Incidencias
+Content-Type: application/json
+
+{ "prioridad_code": "2", "categoria_code": "SOFTWARE" }
+
+### 6. Modificar con título corto → 400
+PATCH {{svc}}/Incidencias(b1b2c3d4-0000-4000-8000-000000000002)
+Content-Type: application/json
+
+{ "titulo": "ab" }
+
+### 7. Modificar solo el técnico → 200
+PATCH {{svc}}/Incidencias(b1b2c3d4-0000-4000-8000-000000000002)
+Content-Type: application/json
+
+{ "tecnico_ID": "a1b2c3d4-0000-4000-8000-000000000001" }
+
+### 8. Cerrar la incidencia 1 → 200, estado C
+POST {{svc}}/Incidencias(b1b2c3d4-0000-4000-8000-000000000001)/IncidenciasService.cerrar
+Content-Type: application/json
+
+{}
+
+### 8.5 A. Con la prioridad → criticidad calculada
+GET {{svc}}/Incidencias?$select=numero,prioridad_code,criticidad
+
+### 8.5 B. Experimento: sin la prioridad → criticidad 0
+GET {{svc}}/Incidencias?$select=numero,criticidad
+
+### 9. Cerrarla otra vez → 409
+POST {{svc}}/Incidencias(b1b2c3d4-0000-4000-8000-000000000001)/IncidenciasService.cerrar
+Content-Type: application/json
+
+{}
+
+### 10. Cerrar la 4, ya cerrada en el CSV → 409
+POST {{svc}}/Incidencias(b1b2c3d4-0000-4000-8000-000000000004)/IncidenciasService.cerrar
+Content-Type: application/json
+
+{}
